@@ -368,9 +368,13 @@ class SCAIL2IdentityTracker:
 
     def track(self, sam3_model, reference_image, pose_video, refine_iterations, auto_detect,
               detection_threshold, detect_interval, markers, detect_conditioning=None):
+        if not isinstance(markers, str):
+            markers = ""
         try:
-            data = json.loads(markers) if markers and markers.strip() else {}
-        except json.JSONDecodeError:
+            data = json.loads(markers) if markers.strip() else {}
+        except (json.JSONDecodeError, ValueError):
+            data = {}
+        if not isinstance(data, dict):  # stale/old widget value (e.g. a bare int) -> treat as empty
             data = {}
         ref_markers = data.get("reference", []) or []
         drv_markers = data.get("driving", []) or []

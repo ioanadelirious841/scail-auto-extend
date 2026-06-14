@@ -1319,8 +1319,7 @@
             "type": "temp",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00002.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\temp\\Wan21_SCAIL2_00002.mp4"
+            "workflow": "Wan21_SCAIL2_00002.png"
           }
         }
       }
@@ -2123,8 +2122,7 @@
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00001.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\Wan21_SCAIL2_00001.mp4"
+            "workflow": "Wan21_SCAIL2_00001.png"
           }
         }
       }
@@ -2371,8 +2369,7 @@
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00002.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\Wan21_SCAIL2_00002.mp4"
+            "workflow": "Wan21_SCAIL2_00002.png"
           }
         }
       }
@@ -2448,8 +2445,7 @@
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00003.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\Wan21_SCAIL2_00003.mp4"
+            "workflow": "Wan21_SCAIL2_00003.png"
           }
         }
       }

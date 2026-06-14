@@ -1238,7 +1238,7 @@
       ],
       "size": [
         792.1812721052838,
-        711.9015190381222
+        564.7526377839393
       ],
       "flags": {},
       "order": 58,
@@ -1295,13 +1295,12 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "clip_Triple_00005.mp4",
+            "filename": "clip_Triple_00006.mp4",
             "subfolder": "SCAIL2\\2026-06-14",
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "clip_Triple_00005.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\SCAIL2\\2026-06-14\\clip_Triple_00005.mp4"
+            "workflow": "clip_Triple_00006.png"
           }
         }
       }
@@ -1315,7 +1314,7 @@
       ],
       "size": [
         436.47427412286015,
-        642.4042282592632
+        523.3575891043622
       ],
       "flags": {},
       "order": 54,
@@ -1372,13 +1371,12 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "clip_Single_00005.mp4",
+            "filename": "clip_Single_00006.mp4",
             "subfolder": "SCAIL2\\2026-06-14",
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 32,
-            "workflow": "clip_Single_00005.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\SCAIL2\\2026-06-14\\clip_Single_00005.mp4"
+            "workflow": "clip_Single_00006.png"
           }
         }
       }
@@ -1530,7 +1528,7 @@
       ],
       "size": [
         792.1812721052838,
-        1439.704557114367
+        998.2579133518179
       ],
       "flags": {},
       "order": 56,
@@ -1587,13 +1585,12 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "clip_Double_00005.mp4",
+            "filename": "clip_Double_00006.mp4",
             "subfolder": "SCAIL2\\2026-06-14",
             "type": "output",
             "format": "video/h264-mp4",
             "frame_rate": 16,
-            "workflow": "clip_Double_00005.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\output\\SCAIL2\\2026-06-14\\clip_Double_00005.mp4"
+            "workflow": "clip_Double_00006.png"
           }
         }
       }
@@ -2039,7 +2036,7 @@
         106
       ],
       "flags": {},
-      "order": 31,
+      "order": 30,
       "mode": 0,
       "inputs": [
         {
@@ -2305,86 +2302,6 @@
       "widgets_values": []
     },
     {
-      "id": 30,
-      "type": "LoadImage",
-      "pos": [
-        376.65825967121594,
-        4546.011344491202
-      ],
-      "size": [
-        298.3313126341949,
-        377.6947302337194
-      ],
-      "flags": {},
-      "order": 21,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            490
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.24.0",
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "GBo9ir3XgAAuPqS.png",
-        "image"
-      ]
-    },
-    {
-      "id": 3,
-      "type": "CLIPTextEncode",
-      "pos": [
-        1807.4174543198553,
-        4695.0495506036905
-      ],
-      "size": [
-        400,
-        200
-      ],
-      "flags": {},
-      "order": 24,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 7
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            448
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.24.0",
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        "The person talks. Two people enter, one from each side of the frame. They all laugh."
-      ],
-      "color": "#232",
-      "bgcolor": "#353"
-    },
-    {
       "id": 104,
       "type": "SCAIL2ColoredMask",
       "pos": [
@@ -2446,167 +2363,6 @@
         "none",
         true
       ]
-    },
-    {
-      "id": 88,
-      "type": "VHS_VideoCombine",
-      "pos": [
-        1683.2134272522007,
-        6092.289369083071
-      ],
-      "size": [
-        399.93744417948983,
-        616.5764691613635
-      ],
-      "flags": {},
-      "order": 41,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 275
-        },
-        {
-          "name": "audio",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": null
-        },
-        {
-          "name": "meta_batch",
-          "shape": 7,
-          "type": "VHS_BatchManager",
-          "link": null
-        },
-        {
-          "name": "vae",
-          "shape": 7,
-          "type": "VAE",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "Filenames",
-          "type": "VHS_FILENAMES",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-videohelpersuite",
-        "ver": "1.7.9",
-        "Node name for S&R": "VHS_VideoCombine"
-      },
-      "widgets_values": {
-        "frame_rate": 16,
-        "loop_count": 0,
-        "filename_prefix": "Wan21_SCAIL2",
-        "format": "video/h264-mp4",
-        "pix_fmt": "yuv420p",
-        "crf": 19,
-        "save_metadata": true,
-        "trim_to_audio": false,
-        "pingpong": false,
-        "save_output": false,
-        "videopreview": {
-          "hidden": false,
-          "paused": false,
-          "params": {
-            "filename": "Wan21_SCAIL2_00011.mp4",
-            "subfolder": "",
-            "type": "temp",
-            "format": "video/h264-mp4",
-            "frame_rate": 16,
-            "workflow": "Wan21_SCAIL2_00011.png",
-            "fullpath": "C:\\Users\\rober\\Documents\\ComfyUI_windows_portable\\ComfyUI\\temp\\Wan21_SCAIL2_00011.mp4"
-          }
-        }
-      }
-    },
-    {
-      "id": 33,
-      "type": "VHS_LoadVideo",
-      "pos": [
-        394.1302386648629,
-        5008.150800123368
-      ],
-      "size": [
-        255.8291015625,
-        492.10382111378203
-      ],
-      "flags": {},
-      "order": 22,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "meta_batch",
-          "shape": 7,
-          "type": "VHS_BatchManager",
-          "link": null
-        },
-        {
-          "name": "vae",
-          "shape": 7,
-          "type": "VAE",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            228,
-            477
-          ]
-        },
-        {
-          "name": "frame_count",
-          "type": "INT",
-          "links": []
-        },
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "links": null
-        },
-        {
-          "name": "video_info",
-          "type": "VHS_VIDEOINFO",
-          "links": []
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-videohelpersuite",
-        "ver": "1.7.9",
-        "Node name for S&R": "VHS_LoadVideo"
-      },
-      "widgets_values": {
-        "video": "laughter.gif",
-        "force_rate": 16,
-        "custom_width": 0,
-        "custom_height": 0,
-        "frame_load_cap": 81,
-        "skip_first_frames": 0,
-        "select_every_nth": 1,
-        "format": "AnimateDiff",
-        "videopreview": {
-          "hidden": false,
-          "paused": false,
-          "params": {
-            "filename": "laughter.gif",
-            "type": "input",
-            "format": "image/gif",
-            "force_rate": 16,
-            "custom_width": 0,
-            "custom_height": 0,
-            "frame_load_cap": 81,
-            "skip_first_frames": 0,
-            "select_every_nth": 1
-          }
-        }
-      }
     },
     {
       "id": 184,
@@ -2703,7 +2459,7 @@
         292
       ],
       "flags": {},
-      "order": 30,
+      "order": 31,
       "mode": 0,
       "inputs": [
         {
@@ -2751,6 +2507,229 @@
       "bgcolor": "#364254"
     },
     {
+      "id": 182,
+      "type": "MarkdownNote",
+      "pos": [
+        1497.7561391695353,
+        5291.315089972
+      ],
+      "size": [
+        436.673991259265,
+        246.71414022020326
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "How to use",
+      "properties": {},
+      "widgets_values": [
+        "# Recommendation\nInput image: Chuck into your image editing model of choice and replace the background with plain white. This (sometimes) helps the model keep the original background of the video in replace mode.\n\n\n# Instructions\n\nSet frame load cap in Load Video Node (if Cap > Video Length it will auto limit to full video)\n(Optional) Skip first frames if needed\n\nDescribe video in Clip Text Encode (green box above).\nThe more accurate the description, the better the gen will match the original\n\nSelect SCAIL-2 Identity Tracker below and press the blue play button which appears above the node. This loads the input image and the first frame of the input video. Draw bounding boxes around each character in both images, then execute the workflow as usual.\n\nIMPORTANT: The number of subjects is hard capped at six by the model, and soft capped to the number of subjects in the input image."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 33,
+      "type": "VHS_LoadVideo",
+      "pos": [
+        394.1302386648629,
+        5008.150800123368
+      ],
+      "size": [
+        255.8291015625,
+        424.1397458864119
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            228,
+            477
+          ]
+        },
+        {
+          "name": "frame_count",
+          "type": "INT",
+          "links": []
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "name": "video_info",
+          "type": "VHS_VIDEOINFO",
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-videohelpersuite",
+        "ver": "1.7.9",
+        "Node name for S&R": "VHS_LoadVideo"
+      },
+      "widgets_values": {
+        "video": "trash-christian-bale.gif",
+        "force_rate": 16,
+        "custom_width": 0,
+        "custom_height": 0,
+        "frame_load_cap": 81,
+        "skip_first_frames": 0,
+        "select_every_nth": 1,
+        "format": "AnimateDiff",
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "trash-christian-bale.gif",
+            "type": "input",
+            "format": "image/gif",
+            "force_rate": 16,
+            "custom_width": 0,
+            "custom_height": 0,
+            "frame_load_cap": 81,
+            "skip_first_frames": 0,
+            "select_every_nth": 1
+          }
+        }
+      }
+    },
+    {
+      "id": 30,
+      "type": "LoadImage",
+      "pos": [
+        376.65825967121594,
+        4546.011344491202
+      ],
+      "size": [
+        298.3313126341949,
+        377.6947302337194
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            490
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.24.0",
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "Flux2-Image_00001_.png",
+        "image"
+      ]
+    },
+    {
+      "id": 88,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        1683.2134272522007,
+        6092.289369083071
+      ],
+      "size": [
+        399.93744417948983,
+        334
+      ],
+      "flags": {},
+      "order": 41,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 275
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "meta_batch",
+          "shape": 7,
+          "type": "VHS_BatchManager",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "shape": 7,
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-videohelpersuite",
+        "ver": "1.7.9",
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 16,
+        "loop_count": 0,
+        "filename_prefix": "Wan21_SCAIL2",
+        "format": "video/h264-mp4",
+        "pix_fmt": "yuv420p",
+        "crf": 19,
+        "save_metadata": true,
+        "trim_to_audio": false,
+        "pingpong": false,
+        "save_output": false,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "Wan21_SCAIL2_00014.mp4",
+            "subfolder": "",
+            "type": "temp",
+            "format": "video/h264-mp4",
+            "frame_rate": 16,
+            "workflow": "Wan21_SCAIL2_00014.png"
+          }
+        }
+      }
+    },
+    {
       "id": 87,
       "type": "CLIPTextEncode",
       "pos": [
@@ -2786,32 +2765,49 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "One person in the middle, two people enter from either side of the frame."
+        "One person in the middle, one person in the background"
       ]
     },
     {
-      "id": 182,
-      "type": "MarkdownNote",
+      "id": 3,
+      "type": "CLIPTextEncode",
       "pos": [
-        1497.7561391695353,
-        5291.315089972
+        1807.4174543198553,
+        4695.0495506036905
       ],
       "size": [
-        436.673991259265,
-        246.71414022020326
+        400,
+        200
       ],
       "flags": {},
-      "order": 23,
+      "order": 24,
       "mode": 0,
-      "inputs": [],
-      "outputs": [],
-      "title": "How to use",
-      "properties": {},
-      "widgets_values": [
-        "# Recommendation\nInput image: Chuck into your image editing model of choice and replace the background with plain white. This (sometimes) helps the model keep the original background of the video in replace mode.\n\n\n# Instructions\n\nSet frame load cap in Load Video Node (if Cap > Video Length it will auto limit to full video)\n(Optional) Skip first frames if needed\n\nDescribe video in Clip Text Encode (green box above).\nThe more accurate the description, the better the gen will match the original\n\nSelect SCAIL-2 Identity Tracker below and press the blue play button which appears above the node. This loads the input image and the first frame of the input video. Draw bounding boxes around each character in both images, then execute the workflow as usual.\n\nIMPORTANT: The number of subjects is hard capped at six by the model, and soft capped to the number of subjects in the input image."
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 7
+        }
       ],
-      "color": "#432",
-      "bgcolor": "#653"
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            448
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.24.0",
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "The person in the foreground smirks and throws a toothpick. The person in the background glares"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
     },
     {
       "id": 221,
@@ -2886,9 +2882,7 @@
         true,
         0.3,
         1,
-        0,
-        "{\"reference\":[{\"type\":\"box\",\"x\":0.22489567273153152,\"y\":217.19193922877744,\"w\":330.95437045614676,\"h\":433.73486971558793},{\"type\":\"box\",\"x\":281.84415019476285,\"y\":130.85598804278968,\"w\":318.6203954338516,\"h\":522.1264051803076},{\"type\":\"box\",\"x\":590.1864683565547,\"y\":95.91058481126474,\"w\":337.1211227207748,\"h\":565.2943023577877}],\"driving\":[{\"type\":\"box\",\"x\":283.73977221639444,\"y\":72.20888309005672,\"w\":377.6381992662527,\"h\":605.4873723702591}]}",
-        ""
+        "{}"
       ]
     }
   ],
@@ -5175,10 +5169,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 1.3310000000000004,
+      "scale": 0.9090909090909091,
       "offset": [
-        -449.081317751863,
-        -5175.630112386636
+        376.84015476762124,
+        -4478.38208229319
       ]
     },
     "frontendVersion": "1.45.15",
