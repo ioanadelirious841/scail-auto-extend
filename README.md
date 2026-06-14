@@ -4,6 +4,8 @@ A ComfyUI custom node that generates SCAIL-2 videos of any length in a single qu
 
 ## Examples
 
+📥 **[Download the example workflow — `SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V2.json)** (right-click → Save As, or drag it into ComfyUI).
+
 https://github.com/user-attachments/assets/ee4ea6c3-a1ca-47ce-9fe0-537cb69b431f
 
 https://github.com/user-attachments/assets/c3a18739-da55-408e-8903-51757cc6530e
@@ -47,7 +49,7 @@ Restart ComfyUI. The nodes appear as **SCAIL Auto Extend Sampler** (`sampling/vi
 
 ## Usage
 
-Load the included workflow: [`SCAIL Auto Extend.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend.json) (direct download — right-click → Save As, or drag the file into ComfyUI) — input video + reference image in, finished video out.
+Load the included workflow: [`SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V2.json) (direct download — right-click → Save As, or drag the file into ComfyUI) — input video + reference image in, finished video out.
 
 Or wire the node into your own workflow in place of your sampler section:
 
