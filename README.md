@@ -107,12 +107,15 @@ The [`SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-e
 SCAIL-2 assigns reference characters to driving people **by spatial position, not by mask colour** — the reference is a single composited frame and the model routes position-first. So:
 
 - **Control who-becomes-whom by ordering the reference composite left-to-right** to match the driving people. Want a character on the middle person? Put them in the middle of the reference lineup.
-- The coloured masks' real job is **temporal consistency** — pinning each identity as people move, cross, or occlude. `sort_by = left_to_right` colours both sides by horizontal position so the two signals agree.
+- The coloured masks' real job is **temporal consistency** — pinning each identity frame to frame as people move. `sort_by = left_to_right` colours both sides by horizontal position so the two signals agree.
+
+You can't make the model weight colour over position. Rearranging the reference to break the spatial correspondence (e.g. stacking the characters vertically instead of in a row) does **not** override position-first routing — tested, no effect.
 
 ### Limitations
 
 - **Max 6 identities.** The model was trained on a fixed 6-colour palette; a 7th wraps and collides.
 - **Constant subject count.** The model expects the driving people present to correspond to the reference. A clip where people **enter or leave mid-shot** (e.g. starts with one person, two walk in) produces artifacts — the model tries to realise all reference identities from the start, cramming/hallucinating. Work around it by splitting the clip at the entrance/exit and rendering each segment with a reference containing only the people present, then concatenating.
+- **Crossings & occlusion.** Identity is held over time only by the per-frame tracked colour mask (the reference latent is static), so when people cross or one passes in front of another, it can break in two places: the model's position-first routing momentarily points each person at the *other's* reference region (swap / bleed / flicker), and SAM3's tracker can itself swap the colour assignment as the masks overlap. Footage where people stay in their lanes is far more reliable. To tell which layer failed, preview `pose_video_mask` through the crossing — swapped colours there mean the tracker; a clean mask but a swapped output means the model.
 
 ## License
 
