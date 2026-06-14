@@ -4,7 +4,7 @@ A ComfyUI custom node that generates SCAIL-2 videos of any length in a single qu
 
 ## Examples
 
-📥 **[Download the example workflow — `SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V2.json)** (right-click → Save As, or drag it into ComfyUI).
+📥 **[Download the example workflow — `SCAIL Auto Extend V3.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V3.json)** (right-click → Save As, or drag it into ComfyUI).
 
 https://github.com/user-attachments/assets/ee4ea6c3-a1ca-47ce-9fe0-537cb69b431f
 
@@ -34,7 +34,7 @@ The bundled example workflows additionally use:
 - [ComfyUI-KJNodes](https://github.com/kijai/ComfyUI-KJNodes) (resize, Set/Get, model loader)
 - [ComfyUI-SAM3](https://github.com/PozzettiAndrea/ComfyUI-SAM3) (person tracking for the colored masks)
 - [ComfyUI_essentials](https://github.com/cubiq/ComfyUI_essentials) (GetImageSize+)
-- [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) (background removal on the reference image — V2 workflow)
+- [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) (background removal on the reference image — V3 workflow)
 
 > **RMBG is optional and swappable.** Removing the reference image's background and padding it to the video's aspect ratio helps the model produce cleaner replacements, but you can replace the RMBG node with any background-removal node you prefer, feed a reference image whose background is already removed, or skip background removal entirely and see how it goes.
 
@@ -45,11 +45,11 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/Brobert-in-aus/scail-auto-extend
 ```
 
-Restart ComfyUI. The nodes appear as **SCAIL Auto Extend Sampler** (`sampling/video`), plus **SCAIL-2 Identity Tracker** and **SCAIL-2 Identity Seeder** (`conditioning/video_models/scail`) for multi-person work.
+Restart ComfyUI. The nodes appear as **SCAIL Auto Extend Sampler** (`sampling/video`), plus **SCAIL-2 Identity Tracker**, **SCAIL-2 Identity Seeder** and **SCAIL-2 Multi-Reference (experimental)** (`conditioning/video_models/scail`) for multi-person work.
 
 ## Usage
 
-Load the included workflow: [`SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V2.json) (direct download — right-click → Save As, or drag the file into ComfyUI) — input video + reference image in, finished video out.
+Load the included workflow: [`SCAIL Auto Extend V3.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V3.json) (direct download — right-click → Save As, or drag the file into ComfyUI) — input video + reference image in, finished video out.
 
 Or wire the node into your own workflow in place of your sampler section:
 
@@ -87,36 +87,41 @@ Outputs: `images` (stitched batch → VHS_VideoCombine) and `frame_count`.
 
 ## Multi-person replacement
 
-Two helper nodes handle replacing several people in the driving video, each with a different character from a single composited reference image:
+Replace several people in the driving video, each with a different character from a single composited reference image. Three helper nodes (`conditioning/video_models/scail`):
 
-- **SCAIL-2 Identity Tracker** (`conditioning/video_models/scail`) — an interactive canvas. Draw a **box** (default) or point per person on the reference image and the driving video; it outputs `ref_track_data` + `driving_track_data` for **Create SCAIL-2 Colored Mask**. Boxes are markedly more reliable than points.
-- **SCAIL-2 Identity Seeder** — a headless variant that takes point/box coordinates as inputs and outputs per-person masks for `SAM3_VideoTrack`'s `initial_mask`.
+- **SCAIL-2 Identity Tracker** — an interactive canvas that outputs `ref_track_data` + `driving_track_data` for **Create SCAIL-2 Colored Mask**. It's an output node, so it gets a ▶ play button (step 2 below). Per side (Reference / Driving tabs):
+  - **Box** mode (default, most reliable): drag a box per person; boxes are selectable, draggable and resizable.
+  - **Point** mode: click = new identity, **Shift+click** adds a positive point, **Alt+click** a negative one. Use 2+ points to capture a whole person — a single click tends to grab only the part under it (a shirt, a face).
+  - **Right-click** removes a box / a single point (or the identity if it was its last point); **Delete** removes the selected one.
+  - Optional **text detection**: wire a `CLIPTextEncode` ("person") into `reference_conditioning` and/or `driving_conditioning`. With `auto_detect` on, text *adds* identities beyond your boxes — up to 6 on the reference, up to the reference box count on the driving side (caps are ceilings, not quotas; it only adds people it actually detects). With no boxes at all, this reproduces the V1 text-only flow.
+  - With `auto_detect` **off** and fewer reference than driving subjects, a warning appears below the preview (some driving people would have no reference to map to).
+- **SCAIL-2 Identity Seeder** — a headless variant that takes point/box coordinates and outputs per-person masks for `SAM3_VideoTrack`'s `initial_mask`.
+- **SCAIL-2 Multi-Reference (experimental)** — feeds each identity as a separate reference frame. It binds by colour (position-independent) but the model blends appearances, so it's not recommended for quality — see [Findings](#findings).
 
-The [`SCAIL Auto Extend V2.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V2.json) workflow wires the Identity Tracker end to end.
+The [`SCAIL Auto Extend V3.json`](https://github.com/Brobert-in-aus/scail-auto-extend/raw/main/SCAIL%20Auto%20Extend%20V3.json) workflow wires the Identity Tracker end to end.
 
 ### Workflow (Identity Tracker)
 
-1. Feed the **processed** reference image (background removed + padded to the video's aspect ratio) into `reference_image`, the resized pose video into `pose_video`, a SAM3 model into `sam3_model`, and optionally a `CLIPTextEncode("person")` into `detect_conditioning` (to auto-detect people who enter later).
-2. **Prepare the canvas (partial execution).** Press the node's **▶ play button** — this runs *Queue Selected Output Nodes*, executing the graph **only up to this node**. With no boxes drawn yet it just renders the reference and driving frames onto the canvas, without running the sampler. (This is why background removal/padding must sit upstream: the canvas then shows the exact pixels the model will see, so your masks line up.)
-3. Draw a **box per person** on the **Reference** tab, then switch to **Driving** and box each person there. Right-click a box to delete; use Undo/Clear as needed.
-4. On **Create SCAIL-2 Colored Mask**, set **`sort_by = left_to_right`** (see below).
+1. Feed the **processed** reference image (background removed + padded to the video's aspect ratio) into `reference_image`, the resized pose video into `pose_video`, a SAM3 model into `sam3_model`. Optionally wire `CLIPTextEncode` into `reference_conditioning` / `driving_conditioning` for text detection.
+2. **Prepare the canvas (partial execution).** Press the node's **▶ play button** — *Queue Selected Output Nodes* runs the graph **only up to this node**, rendering the reference and driving frames onto the canvas without running the sampler. (Background removal / padding must sit upstream so the canvas shows the exact pixels the model will see, and your masks line up.)
+3. Mark each person on the **Reference** tab, then the **Driving** tab — boxes (recommended) or multi-point identities. Marker order = colour order.
+4. On **Create SCAIL-2 Colored Mask**, set **`sort_by = left_to_right`** so both sides colour by position (see [Findings](#findings) for why).
 5. Queue the workflow normally.
 
-### How identity mapping works (important)
-
-SCAIL-2 assigns reference characters to driving people **by spatial position, not by mask colour** — the reference is a single composited frame and the model routes position-first. So:
-
-- **Control who-becomes-whom by ordering the reference composite left-to-right** to match the driving people. Want a character on the middle person? Put them in the middle of the reference lineup.
-- The coloured masks' real job is **temporal consistency** — pinning each identity frame to frame as people move. `sort_by = left_to_right` colours both sides by horizontal position so the two signals agree.
-
-You can't make the model weight colour over position. Rearranging the reference to break the spatial correspondence (e.g. stacking the characters vertically instead of in a row) does **not** override position-first routing — tested, no effect.
-
-### Limitations
-
-- **Max 6 identities.** The model was trained on a fixed 6-colour palette; a 7th wraps and collides.
-- **Constant subject count.** The model expects the driving people present to correspond to the reference. A clip where people **enter or leave mid-shot** (e.g. starts with one person, two walk in) produces artifacts — the model tries to realise all reference identities from the start, cramming/hallucinating. Work around it by splitting the clip at the entrance/exit and rendering each segment with a reference containing only the people present, then concatenating.
-- **Crossings & occlusion.** Identity is held over time only by the per-frame tracked colour mask (the reference latent is static), so when people cross or one passes in front of another, it can break in two places: the model's position-first routing momentarily points each person at the *other's* reference region (swap / bleed / flicker), and SAM3's tracker can itself swap the colour assignment as the masks overlap. Footage where people stay in their lanes is far more reliable. To tell which layer failed, preview `pose_video_mask` through the crossing — swapped colours there mean the tracker; a clean mask but a swapped output means the model.
+See [Findings](#findings) for how identity mapping actually behaves and where it breaks.
 
 ## License
 
 MIT
+
+## Findings
+
+Notes from working out how SCAIL-2 handles multi-identity replacement, recorded so they aren't re-discovered the hard way.
+
+- **Routing is position-first, not colour-first.** With a single composited reference frame, the model assigns reference characters to driving people by **spatial position**; the colour mask's real job is *temporal consistency* (pinning identities frame to frame), not initial assignment. So control who-becomes-whom by **ordering the reference composite left-to-right** to match the driving people, and set `SCAIL2ColoredMask sort_by = left_to_right` so both sides colour by position and the two signals agree. (Mechanism: the reference is concatenated as one extra frame, the colour mask is an additive signal that loses to RoPE positional encoding, and only one reference latent is ever used.)
+- **You can't force colour over position.** Rearranging the reference to break the spatial correspondence (e.g. stacking characters vertically instead of in a row) does **not** override position-first routing — tested, no effect.
+- **Multi-reference binds by colour but blends appearance.** Feeding each identity as its own reference frame (the experimental Multi-Reference node) *does* make binding colour-driven and position-independent — but the model can't keep the appearances apart and blends them across characters. Correct routing, degraded fidelity; matches the model card's "not optimized for multi-reference." Kept as a documented dead end.
+- **Max 6 identities.** The model was trained on a fixed 6-colour palette; a 7th wraps and collides.
+- **Constant subject count.** The model expects the driving people present to correspond to the reference. People **entering or leaving mid-shot** produce artifacts — it tries to realise all reference identities from the start, cramming/hallucinating. Split the clip at the entrance/exit and render each segment with a reference of only the people present, then concatenate.
+- **Crossings & occlusion are the weak point.** Identity is held over time only by the per-frame tracked colour mask (the reference is static), so when people cross or one passes in front of another it can break in two places: the model's position-first routing momentarily points each person at the *other's* reference region (swap / bleed / flicker), and SAM3's tracker can swap the colour assignment as the masks overlap. Footage where people stay in their lanes is far more reliable. To tell which layer failed, preview `pose_video_mask` through the crossing — swapped colours there mean the tracker; a clean mask but a swapped output means the model.
+- **Framerate.** SCAIL-2 is a Wan-2.1 model trained at 16 fps. For smoother output, generate at 16 and **interpolate** (e.g. FILM VFI), setting Video Combine's `frame_rate` to the interpolated rate — cheaper than, and truer to the model's cadence than, raising `force_rate` in the loader (which generates proportionally more frames and pushes the model off 16 fps).

@@ -280,9 +280,10 @@ def _sam3_segment(sam3, image, markers, refine_iterations, device, dtype):
             y2 = (m["y"] + m["h"]) / H * 1008
             sam_box = torch.tensor([[[x1, y1], [x2, y2]]], device=device, dtype=dtype)
             mask_logit = sam3.forward_segment(frame, box_inputs=sam_box)
-        else:  # point
-            coords = torch.tensor([[[m["x"] / W * 1008, m["y"] / H * 1008]]], dtype=dtype, device=device)
-            labels = torch.ones((1, 1), dtype=torch.int32, device=device)
+        else:  # one or more points per identity, each positive (label 1) or negative (0)
+            pts = m.get("points") or [[m.get("x", 0), m.get("y", 0), 1]]
+            coords = torch.tensor([[[p[0] / W * 1008, p[1] / H * 1008] for p in pts]], dtype=dtype, device=device)
+            labels = torch.tensor([[int(p[2]) if len(p) > 2 else 1 for p in pts]], dtype=torch.int32, device=device)
             mask_logit = sam3.forward_segment(frame, point_inputs={"point_coords": coords, "point_labels": labels})
         masks.append(_refine(mask_logit))
     return torch.cat(masks, dim=0)  # [N, H, W]
@@ -326,7 +327,7 @@ class SCAIL2IdentityTracker:
                 "refine_iterations": ("INT", {"default": 2, "min": 0, "max": 5,
                                       "tooltip": "SAM decoder refinement passes per seed."}),
                 "auto_detect": ("BOOLEAN", {"default": True,
-                                "tooltip": "Driving side: append late-arriving people via text detection (needs detect_conditioning). Order may differ from seeds."}),
+                                "tooltip": "Master switch for text detection. When on, reference_conditioning / driving_conditioning (if connected) drive SAM3 text detection on that side, alongside any drawn boxes."}),
                 "detection_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.01,
                                         "tooltip": "Score threshold for auto-detected latecomers."}),
                 "detect_interval": ("INT", {"default": 1, "min": 1, "max": 64,
@@ -335,7 +336,8 @@ class SCAIL2IdentityTracker:
                             "tooltip": "Canvas markers (JSON). Managed by the node's canvas widget."}),
             },
             "optional": {
-                "detect_conditioning": ("CONDITIONING", {"tooltip": "CLIPTextEncode (e.g. 'person') used only for driving-side auto-detect."}),
+                "reference_conditioning": ("CONDITIONING", {"tooltip": "Optional CLIPTextEncode (e.g. 'person') to auto-detect identities on the reference image instead of / alongside drawn boxes. Needs auto_detect on. Text-only loses explicit colour ordering."}),
+                "driving_conditioning": ("CONDITIONING", {"tooltip": "Optional CLIPTextEncode to auto-detect / append people on the driving video. Needs auto_detect on."}),
             },
         }
 
@@ -367,7 +369,8 @@ class SCAIL2IdentityTracker:
         return {"filename": fname, "subfolder": "", "type": "temp"}
 
     def track(self, sam3_model, reference_image, pose_video, refine_iterations, auto_detect,
-              detection_threshold, detect_interval, markers, detect_conditioning=None):
+              detection_threshold, detect_interval, markers,
+              reference_conditioning=None, driving_conditioning=None):
         if not isinstance(markers, str):
             markers = ""
         try:
@@ -384,8 +387,11 @@ class SCAIL2IdentityTracker:
             "driving_preview": [self._save_preview(pose_video[0], "scail_drv")],
         }
 
-        # No markers yet -> this is a play-button preview pass. Emit frames, skip tracking.
-        if not ref_markers and not drv_markers:
+        has_text = auto_detect and (
+            (reference_conditioning is not None and len(reference_conditioning) > 0)
+            or (driving_conditioning is not None and len(driving_conditioning) > 0))
+        # No markers and no text prompts -> play-button preview pass. Emit frames, skip tracking.
+        if not ref_markers and not drv_markers and not has_text:
             ref_td = self._empty_track(reference_image.shape[0], reference_image.shape[1], reference_image.shape[2])
             drv_td = self._empty_track(pose_video.shape[0], pose_video.shape[1], pose_video.shape[2])
             return {"ui": previews, "result": (ref_td, drv_td, reference_image, pose_video)}
@@ -398,35 +404,150 @@ class SCAIL2IdentityTracker:
         ref_seed = _sam3_segment(sam3, reference_image, ref_markers, refine_iterations, device, dtype)
         drv_seed = _sam3_segment(sam3, pose_video, drv_markers, refine_iterations, device, dtype)
 
-        text_prompts = None
-        if auto_detect and detect_conditioning is not None and len(detect_conditioning) > 0:
+        def _text(cond):
+            if not (auto_detect and cond is not None and len(cond) > 0):
+                return None
             from comfy_extras.nodes_sam3 import _extract_text_prompts
-            text_prompts = [(emb, m) for emb, m, _ in _extract_text_prompts(detect_conditioning, device, dtype)]
+            return [(emb, m) for emb, m, _ in _extract_text_prompts(cond, device, dtype)]
+        ref_text = _text(reference_conditioning)
+        drv_text = _text(driving_conditioning)
 
-        # Reference is a controlled still: seeds only, never auto-detect.
-        ref_td = self._track_side(sam3, reference_image, ref_seed, None, device, dtype,
-                                  detection_threshold, 0, detect_interval)
-        # Driving cap = reference identity count, bounded by the 6-colour palette ceiling
-        # (you can't map more distinct identities than you have references). Seeds are never
-        # dropped by this; it only limits auto-detected latecomers.
         ref_count = int(ref_seed.shape[0]) if ref_seed is not None else 0
+        drv_count = int(drv_seed.shape[0]) if drv_seed is not None else 0
+
+        # With auto_detect on, text can add identities beyond the drawn boxes: up to 6 on the
+        # reference, and up to the reference box count on the driving side (ref_text/drv_text
+        # are already None when auto_detect is off). With auto_detect off there is no text to
+        # fill gaps, so warn when there are fewer reference identities than driving subjects.
+        if not auto_detect and ref_count < drv_count:
+            print(f"[SCAIL-2 Identity Tracker] WARNING: {ref_count} reference identit(y/ies) but "
+                  f"{drv_count} driving subject(s) seeded with auto_detect off; "
+                  f"{drv_count - ref_count} driving subject(s) have no reference to map to.")
+
+        # Reference: drawn seeds plus, with auto_detect on, text detection up to 6.
+        ref_td = self._track_side(sam3, reference_image, ref_seed, ref_text, device, dtype,
+                                  detection_threshold, 6 if ref_text is not None else 0, detect_interval)
+        # Driving cap = reference box count (max 6); driving boxes seed identities, text fills
+        # the remaining headroom with non-overlapping detections. No reference boxes -> cap 6.
         drv_max = min(ref_count, 6) if ref_count > 0 else 6
-        # Driving: seeds + optional auto-detected latecomers.
-        drv_td = self._track_side(sam3, pose_video, drv_seed, text_prompts, device, dtype,
+        drv_td = self._track_side(sam3, pose_video, drv_seed, drv_text, device, dtype,
                                   detection_threshold, drv_max, detect_interval)
 
         return {"ui": previews, "result": (ref_td, drv_td, reference_image, pose_video)}
+
+
+class SCAIL2MultiReference:
+    """EXPERIMENTAL concept-validation node for true per-identity references.
+
+    Instead of compositing every character into one reference frame (which makes
+    the model bind identities by spatial position), this stacks up to six
+    single-character images as separate reference frames, each tagged with one
+    palette colour by input order (image_1 -> colour 0/blue, image_2 -> red, ...).
+    Each identity isolated in its own frame removes the within-frame x-position
+    shortcut, so the colour mask should become the binding signal.
+
+    Wiring (single pass, <=81 frames; not the auto-extend sampler yet):
+      WanSCAILToVideo (leave reference_image / reference_image_mask EMPTY; it still
+      builds pose, driving mask, latent) -> this node (adds the multi-frame
+      reference) -> SamplerCustom -> VAEDecode.
+
+    `length` and `replacement_mode` must match the WanSCAILToVideo upstream. Colour
+    order must match the driving side (image_i <-> driving colour i). Per-character
+    `mask_i` (silhouette, e.g. from RMBG) is recommended; without it the whole
+    frame is treated as the character.
+    """
+
+    DESCRIPTION = (
+        "EXPERIMENTAL: stack up to 6 single-character images as separate reference "
+        "frames (image_1->blue, image_2->red, ...) to test colour-based identity "
+        "binding. Wire after WanSCAILToVideo (reference left empty), before SamplerCustom."
+    )
+    CATEGORY = "conditioning/video_models/scail"
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
+    RETURN_NAMES = ("positive", "negative")
+    FUNCTION = "apply"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        optional = {}
+        for i in range(1, 7):
+            optional[f"image_{i}"] = ("IMAGE", {"tooltip": f"Single character -> palette colour {i - 1}. Order must match the driving colours."})
+            optional[f"mask_{i}"] = ("MASK", {"tooltip": f"Silhouette for image_{i} (e.g. RMBG mask). Optional; defaults to the whole frame."})
+        return {
+            "required": {
+                "positive": ("CONDITIONING",),
+                "negative": ("CONDITIONING",),
+                "vae": ("VAE",),
+                "width": ("INT", {"default": 512, "min": 32, "max": 8192, "step": 32}),
+                "height": ("INT", {"default": 896, "min": 32, "max": 8192, "step": 32}),
+                "length": ("INT", {"default": 81, "min": 1, "max": 1024, "step": 4,
+                           "tooltip": "Generation length in frames. Must match the WanSCAILToVideo length."}),
+                "replacement_mode": ("BOOLEAN", {"default": True,
+                                     "tooltip": "Must match WanSCAILToVideo. Replacement composites each ref on black; animation uses the full frame."}),
+            },
+            "optional": optional,
+        }
+
+    def apply(self, positive, negative, vae, width, height, length, replacement_mode, **kwargs):
+        import node_helpers
+        from comfy_extras.nodes_scail import _extract_mask_to_28ch, DEFAULT_PALETTE
+
+        refs = []
+        for i in range(1, 7):
+            img = kwargs.get(f"image_{i}")
+            if img is not None:
+                refs.append((img, kwargs.get(f"mask_{i}")))
+        if not refs:
+            return (positive, negative)
+
+        ref_latents = []
+        colour_masks = []
+        for idx, (img, msk) in enumerate(refs):
+            image = comfy.utils.common_upscale(
+                img[:1, ..., :3].movedim(-1, 1), width, height, "bicubic", "center").movedim(1, -1)  # [1,H,W,3]
+            if msk is not None:
+                m = F.interpolate(msk[:1].unsqueeze(1), size=(height, width), mode="nearest")[:, 0]  # [1,H,W]
+            else:
+                m = torch.ones((1, height, width), device=image.device, dtype=image.dtype)
+            m3 = m.unsqueeze(-1).to(image.dtype)  # [1,H,W,1]
+
+            if replacement_mode:
+                ref_img = image * (m3 > 0.1).to(image.dtype)
+            else:
+                ref_img = image
+            ref_latents.append(vae.encode(ref_img[:, :, :, :3]))  # [1,16,1,h,w]
+
+            colour = torch.tensor(DEFAULT_PALETTE[idx % len(DEFAULT_PALETTE)], device=image.device, dtype=image.dtype).view(1, 1, 1, 3)
+            bg = 0.0 if replacement_mode else 1.0
+            char_sel = (m3 > 0.5).to(image.dtype)
+            colour_img = char_sel * colour + (1.0 - char_sel) * bg  # [1,H,W,3]
+            colour_masks.append(_extract_mask_to_28ch(colour_img))  # [1,1,28,h',w']
+
+        reference_latent = torch.cat(ref_latents, dim=2)        # [1,16,N,h,w]
+        ref_colour = torch.cat(colour_masks, dim=1)             # [1,N,28,h',w']
+        lat_t = ((length - 1) // 4) + 1
+        zeros = torch.zeros((1, lat_t, 28, ref_colour.shape[-2], ref_colour.shape[-1]),
+                            device=ref_colour.device, dtype=ref_colour.dtype)
+        ref_mask_28ch = torch.cat([ref_colour, zeros], dim=1)   # [1, N+lat_t, 28, h',w']
+
+        positive = node_helpers.conditioning_set_values(positive, {"reference_latents": [reference_latent]}, append=True)
+        negative = node_helpers.conditioning_set_values(negative, {"reference_latents": [reference_latent]}, append=True)
+        positive = node_helpers.conditioning_set_values(positive, {"ref_mask_28ch": ref_mask_28ch})
+        negative = node_helpers.conditioning_set_values(negative, {"ref_mask_28ch": ref_mask_28ch})
+        return (positive, negative)
 
 
 NODE_CLASS_MAPPINGS = {
     "SCAILAutoExtend": SCAILAutoExtend,
     "SCAIL2IdentitySeeder": SCAIL2IdentitySeeder,
     "SCAIL2IdentityTracker": SCAIL2IdentityTracker,
+    "SCAIL2MultiReference": SCAIL2MultiReference,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SCAILAutoExtend": "SCAIL Auto Extend Sampler",
     "SCAIL2IdentitySeeder": "SCAIL-2 Identity Seeder",
     "SCAIL2IdentityTracker": "SCAIL-2 Identity Tracker",
+    "SCAIL2MultiReference": "SCAIL-2 Multi-Reference (experimental)",
 }
 
 WEB_DIRECTORY = "./web"
